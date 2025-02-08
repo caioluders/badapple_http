@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bad Apple Animation</title>
+    
+</head>
+<body>
+    <h1>Bad Apple Animation in Burp Suite</h1>
+    <p>Check your Burp Suite HTTP history for requests!</p>
+    <p>Frame Per Second: <input type="number" id="framePerSecond" value="30"></p>
+    <button onclick="startAnimation()">Start Animation</button>
+    <button onclick="stopAnimation()">Stop Animation</button>
+</body>
+<script>
+    let animationFrames = []; // Initialize an empty array
+    let currentFrame = 0;
+    const requestsPerSecond = 1; // Adjust as needed
+    let linesPerFrame = 0; // Variable to hold the number of lines per frame
+    let intervalId = null; // Variable to hold the interval ID
+
+    // Custom encoding function
+    function customEncodeURI(str) {
+        return str.replace(/ /g, '_'); // Replace spaces with '+'
+        // You can add more replacements here if needed
+    }
+
+    function loadAnimationFrames() {
+        fetch('badapple_big.txt') // Update with the correct path to your .txt file
+            .then(response => response.text())
+            .then(data => {
+                animationFrames = data.split('\n\n\n'); // Split the file content into lines
+                animationFrames = animationFrames.map(frame => frame.split('\n'));
+                //calculateLinesPerFrame(animationFrames); // Calculate lines per frame after loading
+                linesPerFrame = animationFrames[0].length;
+                alert(linesPerFrame);
+            })
+            .catch(error => console.error('Error loading animation frames:', error));
+    }
+
+    async function sendRequest(frameLines) {
+        for (const line of frameLines.reverse()) { // .reverse()
+            const encodedLine = customEncodeURI(line); // Use custom encoding
+            const url = `${window.location.href}?${encodedLine}`;
+            
+            // Wait for the request to complete
+                await fetch(url, { method: "HEAD" }); // Send the request and wait for it to resolve
+        }
+    }
+
+    function startAnimation() {
+        function sendNextFrame() {
+            const frameLines = animationFrames[currentFrame]; // Get the lines for the current frame
+            sendRequest(frameLines).then(() => {
+                currentFrame = (currentFrame + 1) % animationFrames.length; // Move to the next frame
+                setTimeout(sendNextFrame, 1000/document.getElementById('framePerSecond').value); // Wait for 1 second before sending the next frame
+            });
+        }
+        sendNextFrame(); // Start the first frame
+    }
+
+    function stopAnimation() {
+        window.location.reload();
+    }
+
+    window.onload = loadAnimationFrames; // Load frames on window load
+</script>
+</html>
